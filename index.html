@@ -188,29 +188,29 @@
 
   <section id="results"></section>
 
-  <div class="build-note">
+  <!-- <div class="build-note">
     Built as a demo: prices below are generated deterministically from your input (not live-scraped) — Amazon/Flipkart/etc. block automated scraping and require official partner APIs to pull real, legal pricing. Swap the <code>getPrices()</code> function in this file for a real call to a price-comparison API (e.g. a product-matching service or each platform's affiliate API) and the rest of the UI works as-is.
-  </div>
+  </div> -->
 
 </div>
 
 <script>
-const PLATFORMS = [
-  {name:"Amazon",      sub:"amazon.in",          color:"#FF9900", letter:"A"},
-  {name:"Flipkart",    sub:"flipkart.com",        color:"#2874F0", letter:"F"},
-  {name:"Myntra",      sub:"myntra.com",          color:"#FF3F6C", letter:"M"},
-  {name:"Croma",       sub:"croma.com",            color:"#00A6E0", letter:"C"},
-  {name:"Reliance Digital", sub:"reliancedigital.in", color:"#E4002B", letter:"R"},
-];
+// const PLATFORMS = [
+//   {name:"Amazon",      sub:"amazon.in",          color:"#FF9900", letter:"A"},
+//   {name:"Flipkart",    sub:"flipkart.com",        color:"#2874F0", letter:"F"},
+//   {name:"Myntra",      sub:"myntra.com",          color:"#FF3F6C", letter:"M"},
+//   {name:"Croma",       sub:"croma.com",            color:"#00A6E0", letter:"C"},
+//   {name:"Reliance Digital", sub:"reliancedigital.in", color:"#E4002B", letter:"R"},
+// ];
 
 // simple deterministic hash so the same input always produces the same demo prices
-function hashStr(str){
-  let h = 0;
-  for(let i=0;i<str.length;i++){
-    h = (h*31 + str.charCodeAt(i)) >>> 0;
-  }
-  return h;
-}
+// function hashStr(str){
+//   let h = 0;
+//   for(let i=0;i<str.length;i++){
+//     h = (h*31 + str.charCodeAt(i)) >>> 0;
+//   }
+//   return h;
+// }
 
 // function guessProductName(input){
 //   try{
@@ -243,18 +243,18 @@ function guessProductName(input) {
     }
 }
 
-function getPrices(seed){
-  // --- DEMO LOGIC ---
-  // Replace this block with a real API call, e.g.:
-  // const res = await fetch('/api/compare?query=' + encodeURIComponent(seed));
-  // return await res.json();
-  const base = 1200 + (hashStr(seed) % 18000); // base price between ~1200 - 19200
-  return PLATFORMS.map((p, i) => {
-    const variance = ((hashStr(seed + p.name) % 4000) - 1500); // platform-specific swing
-    const price = Math.max(499, Math.round((base + variance) / 10) * 10);
-    return {...p, price};
-  });
-}
+// function getPrices(seed){
+//   // --- DEMO LOGIC ---
+//   // Replace this block with a real API call, e.g.:
+//   // const res = await fetch('/api/compare?query=' + encodeURIComponent(seed));
+//   // return await res.json();
+//   const base = 1200 + (hashStr(seed) % 18000); // base price between ~1200 - 19200
+//   return PLATFORMS.map((p, i) => {
+//     const variance = ((hashStr(seed + p.name) % 4000) - 1500); // platform-specific swing
+//     const price = Math.max(499, Math.round((base + variance) / 10) * 10);
+//     return {...p, price};
+//   });
+// }
 
 //function render(input){
 async function render(input){
@@ -263,13 +263,33 @@ async function render(input){
   //const results = await getPrices(input);
   const searchQuery = guessProductName(input);
   const results = await getPrices(searchQuery);
+  const platformInfo = {
+        Amazon: { sub: "amazon.in", color: "#FF9900", letter: "A" },
+        Flipkart: { sub: "flipkart.com", color: "#2874F0", letter: "F" },
+        Myntra: { sub: "myntra.com", color: "#FF3F6C", letter: "M" },
+        Croma: { sub: "croma.com", color: "#00A6E0", letter: "C" },
+        "Reliance Digital": {
+            sub: "reliancedigital.in",
+            color: "#E4002B",
+            letter: "R"
+        }
+    };
+
+    const formattedResults = results.map(item => ({
+        ...item,
+        name: item.platform,
+        sub: platformInfo[item.platform]?.sub || "",
+        color: platformInfo[item.platform]?.color || "#666",
+        letter: platformInfo[item.platform]?.letter || item.platform[0]
+    }));
   if(results.length === 0){
         document.getElementById("results").innerHTML =
             "<h3>No prices found.</h3>";
         document.getElementById("results").style.display = "block";
         return;
     }
-  const sorted = [...results].sort((a,b)=>a.price-b.price);
+//   const sorted = [...results].sort((a,b)=>a.price-b.price);
+    const sorted = [...formattedResults].sort((a,b)=>a.price-b.price);
   const cheapest = sorted[0].price;
   const priciest = sorted[sorted.length-1].price;
   const savingsPct = Math.round((1 - cheapest/priciest) * 100);
@@ -302,8 +322,9 @@ async function render(input){
         <div class="barcode">${barcodeBars}</div>
       </div>
     </div>
-    <div class="disclaimer">Simulated comparison for demo purposes — see note below to connect real pricing data.</div>
-  `;
+    <div class="disclaimer">
+    Prices fetched live from Google Shopping.
+    </div>  `;
   document.getElementById('results').style.display = 'block';
 }
 
@@ -321,8 +342,23 @@ window.addEventListener('DOMContentLoaded', () => {
   document.getElementById('linkInput').value = 'https://www.amazon.in/Sony-WH-1000XM5-Cancelling-Headphones-Multipoint/dp/B09XS7JWHH';
   render(document.getElementById('linkInput').value);
 });
+// async function getPrices(query) {
+//     const response = await fetch("http://localhost:3000/api/compare", {
+//         method: "POST",
+//         headers: {
+//             "Content-Type": "application/json"
+//         },
+//         body: JSON.stringify({ query })
+//     });
+
+//     if (!response.ok) {
+//         throw new Error("Server error");
+//     }
+
+//     return await response.json();
+// }
 async function getPrices(query) {
-    const response = await fetch("http://localhost:3000/api/compare", {
+    const response = await fetch("/api/compare", {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
@@ -330,9 +366,7 @@ async function getPrices(query) {
         body: JSON.stringify({ query })
     });
 
-    if (!response.ok) {
-        throw new Error("Server error");
-    }
+    if (!response.ok) throw new Error("Server error");
 
     return await response.json();
 }
