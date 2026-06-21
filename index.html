@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TagCheck — Compare prices across stores</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#10140F;
+    --panel:#181D16;
+    --panel-raised:#1F251C;
+    --line:#323A2D;
+    --ink:#EDEAE0;
+    --muted:#8B9586;
+    --orange:#FF6A35;
+    --green:#3FDE89;
+    --green-dim:#2A6B47;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    background-image:
+      radial-gradient(circle at 85% -10%, rgba(255,106,53,0.10), transparent 45%),
+      radial-gradient(circle at 0% 100%, rgba(63,222,137,0.07), transparent 40%);
+  }
+  a{color:inherit;}
+
+  .wrap{max-width:840px;margin:0 auto;padding:0 24px 80px;}
+
+  /* ---- Header ---- */
+  header{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:28px 0 18px;
+    border-bottom:1px dashed var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:0.5px;}
+  .brand .tag-icon{
+    width:26px;height:26px;border:2px solid var(--orange);border-radius:6px 2px 6px 2px;
+    position:relative;transform:rotate(-8deg);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand .tag-icon::after{content:'';width:6px;height:6px;border-radius:50%;background:var(--orange);}
+  .brand-name{font-family:'Archivo Black',sans-serif;font-size:18px;}
+  .brand-name span{color:var(--orange);}
+  nav.tiny{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+
+  /* ---- Hero ---- */
+  .hero{padding:54px 0 36px;}
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--green);
+    letter-spacing:1.5px;text-transform:uppercase;margin-bottom:14px;
+    display:flex;align-items:center;gap:8px;
+  }
+  .eyebrow::before{content:'';width:7px;height:7px;background:var(--green);border-radius:50%;box-shadow:0 0 0 3px rgba(63,222,137,0.18);}
+  h1{
+    font-family:'Archivo Black',sans-serif;
+    font-size:clamp(34px,6vw,56px);
+    line-height:1.04;margin:0 0 16px;letter-spacing:-0.5px;
+  }
+  h1 .strike{position:relative;color:var(--muted);}
+  h1 .strike::after{content:'';position:absolute;left:-2%;right:-2%;top:50%;height:3px;background:var(--orange);transform:rotate(-3deg);}
+  p.sub{color:var(--muted);font-size:16px;max-width:480px;line-height:1.55;margin:0;}
+
+  /* ---- Input panel ---- */
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+    margin-top:32px;
+  }
+  .panel-label{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+  .input-row{display:flex;gap:10px;}
+  input#linkInput{
+    flex:1;background:var(--bg);border:1px solid var(--line);color:var(--ink);
+    padding:14px 16px;border-radius:9px;font-size:14px;font-family:'JetBrains Mono',monospace;
+    outline:none;
+  }
+  input#linkInput::placeholder{color:#5C645A;}
+  input#linkInput:focus{border-color:var(--orange);}
+  button#compareBtn{
+    background:var(--orange);color:#15140F;border:none;border-radius:9px;
+    padding:0 22px;font-weight:700;font-size:14px;cursor:pointer;
+    font-family:'Inter',sans-serif;transition:transform .12s ease, background .12s ease;
+    white-space:nowrap;
+  }
+  button#compareBtn:hover{background:#FF814F;}
+  button#compareBtn:active{transform:scale(0.97);}
+  .hint{margin-top:10px;font-size:12.5px;color:#697065;}
+  .hint b{color:var(--muted);}
+
+  /* ---- Results: receipt style ---- */
+  #results{margin-top:40px;display:none;}
+  .receipt{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    overflow:hidden;
+  }
+  .receipt-head{
+    padding:20px 22px 16px;
+    border-bottom:1px dashed var(--line);
+  }
+  .receipt-head .product-name{font-weight:700;font-size:15px;margin-bottom:4px;}
+  .receipt-head .product-meta{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);word-break:break-all;}
+
+  .row{
+    display:grid;grid-template-columns:34px 1fr auto auto;
+    align-items:center;gap:14px;
+    padding:16px 22px;
+    border-bottom:1px solid var(--line);
+    opacity:0;transform:translateY(6px);
+    animation:rise .4s ease forwards;
+  }
+  .row:last-child{border-bottom:none;}
+  @keyframes rise{to{opacity:1;transform:translateY(0);}}
+
+  .platform-dot{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:13px;color:#15140F;}
+  .platform-name{font-weight:600;font-size:14.5px;}
+  .platform-sub{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:2px;}
+  .price{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:17px;text-align:right;}
+  .badge{
+    font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:0.5px;
+    padding:4px 8px;border-radius:5px;text-transform:uppercase;text-align:center;white-space:nowrap;
+  }
+  .badge.best{background:rgba(63,222,137,0.15);color:var(--green);border:1px solid var(--green-dim);}
+  .badge.empty{visibility:hidden;}
+
+  .receipt-foot{
+    padding:18px 22px 22px;
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--panel-raised);
+  }
+  .save-line{font-size:13px;color:var(--muted);}
+  .save-line b{color:var(--green);font-family:'JetBrains Mono',monospace;}
+  .barcode{display:flex;gap:2px;align-items:flex-end;height:24px;opacity:0.55;}
+  .barcode i{display:block;width:2px;background:var(--muted);}
+
+  .disclaimer{
+    margin-top:18px;font-size:12px;color:#697065;line-height:1.6;
+    border-left:2px solid var(--line);padding-left:12px;
+  }
+
+  /* ---- "how it works" footer note ---- */
+  .build-note{
+    margin-top:64px;padding-top:24px;border-top:1px dashed var(--line);
+    font-size:12.5px;color:#5C645A;line-height:1.7;
+  }
+  .build-note code{background:var(--panel);padding:1px 6px;border-radius:4px;color:var(--muted);font-family:'JetBrains Mono',monospace;}
+
+  @media (max-width:520px){
+    .row{grid-template-columns:30px 1fr auto;}
+    .badge{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <div class="tag-icon"></div>
+      <div class="brand-name">Tag<span>Check</span></div>
+    </div>
+    <nav class="tiny">DEMO BUILD · v0.1</nav>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow">Paste once, compare everywhere</div>
+    <h1>Stop paying the<br><span class="strike">sticker price.</span></h1>
+    <p class="sub">Drop in a product link from any store and TagCheck lines up what it costs elsewhere — Amazon, Flipkart, Myntra, Croma, Reliance Digital — so the cheapest tag wins.</p>
+
+    <div class="panel">
+      <div class="panel-label">Product link or name</div>
+      <div class="input-row">
+        <input id="linkInput" type="text" placeholder="https://www.amazon.in/dp/B0XXXXXX  or  “Sony WH-1000XM5”">
+        <button id="compareBtn">Compare</button>
+      </div>
+      <div class="hint">Tip: works with a full product URL <b>or</b> just the product name.</div>
+    </div>
+  </section>
+
+  <section id="results"></section>
+
+  <div class="build-note">
+    Built as a demo: prices below are generated deterministically from your input (not live-scraped) — Amazon/Flipkart/etc. block automated scraping and require official partner APIs to pull real, legal pricing. Swap the <code>getPrices()</code> function in this file for a real call to a price-comparison API (e.g. a product-matching service or each platform's affiliate API) and the rest of the UI works as-is.
+  </div>
+
+</div>
+
+<script>
+const PLATFORMS = [
+  {name:"Amazon",      sub:"amazon.in",          color:"#FF9900", letter:"A"},
+  {name:"Flipkart",    sub:"flipkart.com",        color:"#2874F0", letter:"F"},
+  {name:"Myntra",      sub:"myntra.com",          color:"#FF3F6C", letter:"M"},
+  {name:"Croma",       sub:"croma.com",            color:"#00A6E0", letter:"C"},
+  {name:"Reliance Digital", sub:"reliancedigital.in", color:"#E4002B", letter:"R"},
+];
+
+// simple deterministic hash so the same input always produces the same demo prices
+function hashStr(str){
+  let h = 0;
+  for(let i=0;i<str.length;i++){
+    h = (h*31 + str.charCodeAt(i)) >>> 0;
+  }
+  return h;
+}
+
+// function guessProductName(input){
+//   try{
+//     const url = new URL(input);
+//     const slugPart = url.pathname.split('/').filter(Boolean)
+//       .find(p => p.length > 4 && /[a-zA-Z]/.test(p)) || url.hostname;
+//     return slugPart.replace(/[-_]/g,' ').replace(/\b\w/g, c => c.toUpperCase()).slice(0,60);
+//   }catch(e){
+//     return input.trim();
+//   }
+// }
+function guessProductName(input) {
+    try {
+        const url = new URL(input);
+
+        const parts = url.pathname.split("/");
+
+        const slug = parts.find(p =>
+            p.includes("-") &&
+            !p.startsWith("dp") &&
+            p.length > 10
+        );
+
+        return slug
+            ? decodeURIComponent(slug).replace(/-/g, " ")
+            : input;
+
+    } catch {
+        return input;
+    }
+}
+
+function getPrices(seed){
+  // --- DEMO LOGIC ---
+  // Replace this block with a real API call, e.g.:
+  // const res = await fetch('/api/compare?query=' + encodeURIComponent(seed));
+  // return await res.json();
+  const base = 1200 + (hashStr(seed) % 18000); // base price between ~1200 - 19200
+  return PLATFORMS.map((p, i) => {
+    const variance = ((hashStr(seed + p.name) % 4000) - 1500); // platform-specific swing
+    const price = Math.max(499, Math.round((base + variance) / 10) * 10);
+    return {...p, price};
+  });
+}
+
+//function render(input){
+async function render(input){
+  const productName = guessProductName(input);
+  //const results = getPrices(input.trim().toLowerCase());
+  //const results = await getPrices(input);
+  const searchQuery = guessProductName(input);
+  const results = await getPrices(searchQuery);
+  if(results.length === 0){
+        document.getElementById("results").innerHTML =
+            "<h3>No prices found.</h3>";
+        document.getElementById("results").style.display = "block";
+        return;
+    }
+  const sorted = [...results].sort((a,b)=>a.price-b.price);
+  const cheapest = sorted[0].price;
+  const priciest = sorted[sorted.length-1].price;
+  const savingsPct = Math.round((1 - cheapest/priciest) * 100);
+
+  const rowsHtml = sorted.map((p, i) => `
+    <div class="row" style="animation-delay:${i*70}ms">
+      <div class="platform-dot" style="background:${p.color}">${p.letter}</div>
+      <div>
+        <div class="platform-name">${p.name}</div>
+        <div class="platform-sub">${p.sub}</div>
+      </div>
+      <div class="badge ${i===0 ? 'best':'empty'}">${i===0 ? 'Best price' : '—'}</div>
+      <div class="price" style="color:${i===0 ? 'var(--green)' : 'var(--ink)'}">₹${p.price.toLocaleString('en-IN')}</div>
+    </div>
+  `).join('');
+
+  const barcodeBars = Array.from({length:40}, () =>
+    `<i style="height:${6+Math.random()*18}px;width:${Math.random()>0.7?3:2}px;"></i>`
+  ).join('');
+
+  document.getElementById('results').innerHTML = `
+    <div class="receipt">
+      <div class="receipt-head">
+        <div class="product-name">${productName || 'Your product'}</div>
+        <div class="product-meta">${input}</div>
+      </div>
+      ${rowsHtml}
+      <div class="receipt-foot">
+        <div class="save-line">Cheapest is <b>₹${cheapest.toLocaleString('en-IN')}</b> — up to <b>${savingsPct}%</b> less than the priciest listing.</div>
+        <div class="barcode">${barcodeBars}</div>
+      </div>
+    </div>
+    <div class="disclaimer">Simulated comparison for demo purposes — see note below to connect real pricing data.</div>
+  `;
+  document.getElementById('results').style.display = 'block';
+}
+
+document.getElementById('compareBtn').addEventListener('click', () => {
+  const val = document.getElementById('linkInput').value.trim();
+  if(!val) return;
+  render(val);
+});
+document.getElementById('linkInput').addEventListener('keydown', (e) => {
+  if(e.key === 'Enter') document.getElementById('compareBtn').click();
+});
+
+// seed with an example on first load
+window.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('linkInput').value = 'https://www.amazon.in/Sony-WH-1000XM5-Cancelling-Headphones-Multipoint/dp/B09XS7JWHH';
+  render(document.getElementById('linkInput').value);
+});
+async function getPrices(query) {
+    const response = await fetch("http://localhost:3000/api/compare", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ query })
+    });
+
+    if (!response.ok) {
+        throw new Error("Server error");
+    }
+
+    return await response.json();
+}
+
+function getPlatformColor(name){
+
+    const colors = {
+        "Amazon":"#FF9900",
+        "Flipkart":"#2874F0",
+        "Myntra":"#FF3F6C",
+        "Croma":"#00A6E0",
+        "Reliance Digital":"#E4002B"
+    };
+
+    return colors[name] || "#666";
+}
+function detectWebsite(url) {
+    try {
+        const hostname = new URL(url).hostname.toLowerCase();
+
+        if (hostname.includes("amazon")) return "amazon";
+        if (hostname.includes("flipkart")) return "flipkart";
+        if (hostname.includes("myntra")) return "myntra";
+        if (hostname.includes("ajio")) return "ajio";
+        if (hostname.includes("croma")) return "croma";
+        if (hostname.includes("reliancedigital")) return "reliance";
+        if (hostname.includes("meesho")) return "meesho";
+
+        return "unknown";
+    } catch {
+        return "invalid";
+    }
+}
+
+</script>
+</body>
+</html>
