@@ -275,13 +275,14 @@ async function render(input){
         }
     };
 
-    const formattedResults = results.map(item => ({
-        ...item,
-        name: item.platform,
-        sub: platformInfo[item.platform]?.sub || "",
-        color: platformInfo[item.platform]?.color || "#666",
-        letter: platformInfo[item.platform]?.letter || item.platform[0]
-    }));
+    // const formattedResults = results.map(item => ({
+    //     ...item,
+    //     name: item.platform,
+    //     sub: platformInfo[item.platform]?.sub || "",
+    //     color: platformInfo[item.platform]?.color || "#666",
+    //     letter: platformInfo[item.platform]?.letter || item.platform[0]
+    // }));
+    const formattedResults = results;
   if(results.length === 0){
         document.getElementById("results").innerHTML =
             "<h3>No prices found.</h3>";
